@@ -9,7 +9,6 @@ find_package(MPI REQUIRED)
 set(TEST_C_SRCS
   send_recv
   ping_pong_dep
-  simple_computation
   custom_computation
   ping_pong_schedule
   allreduce
