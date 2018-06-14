@@ -10,15 +10,12 @@ include_directories(
 
 add_library(fflib SHARED 
 src/ff.c
-src/ffcomp.h
 src/ffdatatype.h
 src/ff.h
 src/ffinternal.h
 src/ffop.c
 src/ffop.h
 src/ffop_mem.h
-src/ffcomp.c
-src/ffcomp.h
 src/ffprogress.c
 src/ffprogress.h
 src/ffrecv.c
@@ -64,11 +61,15 @@ target_link_libraries(fflib ${MPI_LIBRARIES})
 
 set(CMAKE_C_FLAGS_DEBUG "-DFFDEBUG -g")
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
+
 install(TARGETS fflib
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(FILES ${CMAKE_BINARY_DIR}/fflib.pc
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
+
+add_subdirectory(libfabric)
 
 #--------------------------------------------------
 # Tests
