@@ -1,5 +1,20 @@
 cmake_minimum_required(VERSION 3.9)
 project(fflib VERSION 2.0.0 DESCRIPTION "fflib 2.0")
+
+#--------------------------------------------------
+# Setup Output directories
+#--------------------------------------------------
+SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
+    ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all Executables."
+)
+SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY
+    ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all Libraries"
+)
+SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY
+    ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all static libraries."
+)
+
+#--------------------------------------------------
 include(GNUInstallDirs)
 
 find_package(MPI REQUIRED)
@@ -69,6 +84,9 @@ install(TARGETS fflib
 install(FILES ${CMAKE_BINARY_DIR}/fflib.pc
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 
+#--------------------------------------------------
+# libfabric support
+#--------------------------------------------------
 add_subdirectory(libfabric)
 
 #--------------------------------------------------
