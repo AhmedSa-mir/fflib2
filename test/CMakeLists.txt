@@ -1,24 +1,24 @@
 #--------------------------------------------------
-# find MPI
-#--------------------------------------------------
-find_package(MPI REQUIRED)
-
-#--------------------------------------------------
 # setup tests
 #--------------------------------------------------
-set(TEST_C_SRCS
-  send_recv
-  ping_pong_dep
-  simple_computation
-  custom_computation
-  ping_pong_schedule
-)
+if (FFLIB_HAVE_MPI)
+  set(TEST_C_SRCS
+    send_recv
+    ping_pong_dep
+    simple_computation
+    custom_computation
+    ping_pong_schedule
+  )
+endif()
+
+if (FFLIB_HAVE_LIBFABRIC)
+  set(TEST_C_SRCS
+    send_recv_libfabric
+  )
+endif()
 
 set(TEST_CPP_SRCS
 )
-
-include_directories(${MPI_C_INCLUDE_PATH})
-message("include_directories(${MPI_INCLUDE_PATH})")
 
 foreach(test ${TEST_C_SRCS})
   add_executable(${test} ${test}.c)

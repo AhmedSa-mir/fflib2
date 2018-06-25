@@ -29,9 +29,6 @@
  * SOFTWARE.
  */
 
-#include "ctx.h"
-
-#include <config.h>
 
 #include <time.h>
 #include <unistd.h>
@@ -54,7 +51,7 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
-#include <ofi_osd.h>
+//#include <ofi_osd.h>
 #include <rdma/fabric.h>
 #include <rdma/fi_cm.h>
 #include <rdma/fi_domain.h>
@@ -62,6 +59,8 @@
 #include <rdma/fi_eq.h>
 #include <rdma/fi_errno.h>
 #include <rdma/fi_tagged.h>
+
+#include "ctx.h"
 
 #ifndef OFI_MR_BASIC_MAP
 #define OFI_MR_BASIC_MAP (FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_VIRT_ADDR)
