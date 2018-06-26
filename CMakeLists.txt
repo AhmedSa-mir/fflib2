@@ -20,7 +20,7 @@ SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
 #--------------------------------------------------
-# Option to choose network library provider 
+# Option to choose network library provider
 #--------------------------------------------------
 set(fflib_PROVIDER "mpi" CACHE STRING "Choose underlying library to provide communication functions")
 set_property(CACHE fflib_PROVIDER PROPERTY STRINGS mpi libfabric)
@@ -36,7 +36,7 @@ include(GNUInstallDirs)
 if (fflib_PROVIDER STREQUAL "mpi")
   find_package(MPI REQUIRED)
   include_directories(
-    ${MPI_INCLUDE_PATH} 
+    ${MPI_INCLUDE_PATH}
     ${CMAKE_CURRENT_SOURCE_DIR}/src
   )
   set(FFLIB_HAVE_MPI 1)
@@ -62,46 +62,27 @@ endif()
 #--------------------------------------------------
 set(FFLIB_SRCS
   src/ff.c
-  src/ffdatatype.h
-  src/ff.h
-  src/ffinternal.h
   src/ffop.c
-  src/ffop.h
-  src/ffop_mem.h
-# src/ffcomp.c
-  src/ffcomp.h
+  src/ffcomp.c
   src/ffprogress.c
-  src/ffprogress.h
   src/ffrecv.c
-  src/ffrecv.h
   src/ffsend.c
-  src/ffsend.h
-  src/ffstorage.h
   src/ffstorage.c
-  src/ffbind.h
   src/ffnop.c
-  src/ffnop.h
   src/ffschedule.c
-  src/ffschedule.h
   #
   src/utils/ffarman.c
-  src/utils/ffarman.h
 )
 
 if (FFLIB_HAVE_MPI)
   set(FFLIB_COMPONENT_SRCS
-    src/components/mpi/ffmpi.h
     src/components/mpi/ffmpi.c
     src/components/mpi/ffop_mpi.c
-    src/components/mpi/ffop_mpi.h
     src/components/mpi/ffop_mpi_init.c
     src/components/mpi/ffop_mpi_progresser.c
-    src/components/mpi/ffop_mpi_progresser.h
     src/components/mpi/ffop_mpi_recv.c
     src/components/mpi/ffop_mpi_send.c
-    src/components/mpi/ffmpi_types.h
     #
-    src/bindings/mpi_binding.h
     src/bindings/mpi_binding.c
   )
 endif()
@@ -109,39 +90,31 @@ endif()
 #if (FFLIB_HAVE_GCOMP)
   set(FFLIB_COMPONENT_SRCS ${FFLIB_COMPONENT_SRCS}
     src/components/gcomp/ffgcomp.c
-    src/components/gcomp/ffgcomp.h
     src/components/gcomp/ffop_gcomp.c
-    src/components/gcomp/ffop_gcomp.h
     src/components/gcomp/ffop_gcomp_operator.c
-    src/components/gcomp/ffop_gcomp_operator.h
-    src/components/gcomp/ffgcomp_types.h
   )
 #endif()
 
 if (FFLIB_HAVE_LIBFABRIC)
   set(FFLIB_COMPONENT_SRCS
-    src/components/libfabric/ctx.h
     src/components/libfabric/fflibfabric.c
-    src/components/libfabric/fflibfabric.h
-    src/components/libfabric/fflibfabric_types.h
-    src/components/libfabric/ffop_libfabric.h
     src/components/libfabric/ffop_libfabric_init.c
     src/components/libfabric/ffop_libfabric_progresser.c
-    src/components/libfabric/ffop_libfabric_progresser.h
     src/components/libfabric/ffop_libfabric_recv.c
     src/components/libfabric/ffop_libfabric_send.c
-    src/components/libfabric/libfabric_impl.h
     #
-    src/bindings/libfabric_binding.h
     src/bindings/libfabric_binding.c
   )
+
+  set_source_files_properties(${FFLIB_COMPONENT_SRCS} PROPERTIES LANGUAGE C)
+
 endif()
 
 
 #--------------------------------------------------
-# Define the fflib library 
+# Define the fflib library
 #--------------------------------------------------
-add_library(fflib SHARED 
+add_library(fflib SHARED
   ${FFLIB_SRCS}
   ${FFLIB_COMPONENT_SRCS}
 )
