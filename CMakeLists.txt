@@ -137,11 +137,6 @@ install(FILES ${CMAKE_BINARY_DIR}/fflib.pc
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 
 #--------------------------------------------------
-# libfabric support
-#--------------------------------------------------
-add_subdirectory(libfabric)
-
-#--------------------------------------------------
 # Tests
 #--------------------------------------------------
 add_subdirectory(test)
