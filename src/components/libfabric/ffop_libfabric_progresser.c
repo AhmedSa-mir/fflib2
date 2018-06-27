@@ -16,7 +16,7 @@ int ffop_libfabric_progresser_init(){
     //FFLOCK_INIT(&progress_lock);
     if (ffarman_create(FFLIBFABRIC_MAX_REQ, &index_manager)!=FFSUCCESS){
         return FFERROR;
-    }    
+    }
 
     //for (int i = 0; i < FFLIBFABRIC_MAX_REQ; i++){
     //    requests[i] = MPI_REQUEST_NULL;
@@ -32,7 +32,7 @@ int ffop_libfabric_progresser_finalize(){
     return FFSUCCESS;
 }
 
-int ffop_libfabric_progresser_track(){
+int ffop_libfabric_progresser_track(ffop_t * op){
 
     //uint32_t idx = ffarman_get(&index_manager);
 
@@ -43,14 +43,14 @@ int ffop_libfabric_progresser_track(){
 
     //posted_ops[idx] = op;
     //requests[idx] = req;
-    
+
     return FFSUCCESS;
 }
 
 int ffop_libfabric_progresser_release(uint32_t idx){
 
     //ffarman_put(&index_manager, idx);
-    
+
     //requests[idx] = MPI_REQUEST_NULL;
     //posted_ops[idx] = NULL;
 
@@ -64,13 +64,16 @@ int ffop_libfabric_progresser_progress(ffop_t ** ready_list){
     struct fi_cq_msg_entry entry;
     int ret = 0;
 
+    // JB added this to get compilation working
+    struct fid_cq* txcq_ = NULL;
+
     ret = fi_cq_read(txcq_, &entry, 1);
 
     if (ret > 0) {
-        
+
         if (entry.flags == (FI_SEND | FI_RECV)) {
-            ctx* handler = reinterpret_cast<ctx*>(entry.op_context);
-            handler->op_complete(ready_list);
+            struct ctx* handler = (struct ctx*)(entry.op_context);
+            op_complete(handler, ready_list);
         }
         return FFSUCCESS;
     }

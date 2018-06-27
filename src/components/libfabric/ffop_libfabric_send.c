@@ -5,7 +5,7 @@
 #include "libfabric_impl.h"
 
 int ffop_libfabric_send_post(ffop_t * op, ffop_mem_set_t * mem){
-    int res;
+    int ret;
 
     ffsend_t * send = &(op->send);
 
@@ -22,11 +22,11 @@ int ffop_libfabric_send_post(ffop_t * op, ffop_mem_set_t * mem){
     void * buffer;
     GETBUFFER(send->buffer, mem, buffer)
 
-    ret = fi_send(ct->ep, ct->tx_buf, ct->opts.transfer_size + ct->msg_prefix_size,
-                    fi_mr_desc(ct->mr), ct->remote_fi_addr, ct->ctx_ptr);
-    
+    ret = fi_send(ct.ep, ct.tx_buf, ct.opts.transfer_size + ct.msg_prefix_size,
+                    fi_mr_desc(ct.mr), ct.remote_fi_addr, ct.ctx_ptr);
+
     if (ret)
         return FFERROR;
 
-    return ffop_libfabric_progresser_track();
+    return ffop_libfabric_progresser_track(op);
 }

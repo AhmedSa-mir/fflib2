@@ -15,7 +15,7 @@ int main(int argc, char * argv[]){
     if (argc!=2){
         printf("Usage: %s <count>\n", argv[0]);
         exit(1);
-    } 
+    }
 
     count = atoi(argv[1]);
 
@@ -37,30 +37,31 @@ int main(int argc, char * argv[]){
     if (rank==0){ /* sender */
         for (int i=0; i<count; i++) buffer_ping[i] = i;
         for (int i=0; i<count; i++) buffer_pong[i] = 0;
-    
+
         FFCALL(ffsend(buffer_ping, count, FFINT32, 1, 0, 0, &pingop));
-        FFCALL(ffrecv(buffer_pong, count, FFINT32, 1, 0, 0, &pongop));        
-    
+        FFCALL(ffrecv(buffer_pong, count, FFINT32, 1, 0, 0, &pongop));
+
         FFCALL(ffschedule_add_op(sched, pingop));
         FFCALL(ffschedule_add_op(sched, pongop));
 
     }else{ /* receiver */
 
         FFCALL(ffrecv(buffer_ping, count, FFINT32, 0, 0, 0, &pingop));
-        FFCALL(ffsend(buffer_ping, count, FFINT32, 0, 0, 0, &pongop));       
+        FFCALL(ffsend(buffer_ping, count, FFINT32, 0, 0, 0, &pongop));
         ffop_hb(pingop, pongop);
- 
+
         FFCALL(ffschedule_add_op(sched, pingop));
         FFCALL(ffschedule_add_op(sched, pongop));
     }
-    
+
     FFCALL(ffschedule_post(sched));
 
     /* wait the pong to be received/sent */
     FFCALL(ffschedule_wait(sched));
 
+#ifdef FFLIB_HAVE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-   
+#endif
 
     int fail=0;
     for (int i=0; i<count && rank==0; i++){
@@ -83,12 +84,12 @@ int main(int argc, char * argv[]){
 
     ffop_free(pingop);
     ffop_free(pongop);
-    
+
     ffschedule_delete(sched);
 
-    fffinalize();   
+    fffinalize();
     free(buffer_ping);
-    free(buffer_pong);    
+    free(buffer_pong);
 
     return 0;
 }
