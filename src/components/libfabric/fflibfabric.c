@@ -39,40 +39,40 @@ int fflibfabric_init(int * argc, char *** argv){
 
     PP_DEBUG("Selected endpoint: MSG\n");
 
-    ret = pp_ctrl_init(ct);
+    ret = pp_ctrl_init(&ct);
     if (ret)
         return EXIT_FAILURE;
 
-    if (!ct->opts.dst_addr) {
-        ret = pp_start_server(ct);
+    if (!ct.opts.dst_addr) {
+        ret = pp_start_server(&ct);
         if (ret)
             return EXIT_FAILURE;
     }
 
-    if (ct->opts.dst_addr) {
-        ret = pp_client_connect(ct);
+    if (ct.opts.dst_addr) {
+        ret = pp_client_connect(&ct);
         PP_DEBUG("CLIENT: client_connect=%s\n", ret ? "KO" : "OK");
     } else {
-        ret = pp_server_connect(ct);
+        ret = pp_server_connect(&ct);
         PP_DEBUG("SERVER: server_connect=%s\n", ret ? "KO" : "OK");
     }
 
     if (ret)
         return EXIT_FAILURE;
- 
-    //initialize the generic computation (gcomp) component 
+
+    //initialize the generic computation (gcomp) component
     ffgcomp_init();
-   
-    return FFSUCCESS; 
+
+    return FFSUCCESS;
 }
 
 int fflibfabric_finalize(){
-    
-    ret = pp_finalize(ct);
+
+    int ret = pp_finalize(&ct);
     if(ret)
         return FFERROR;
 
-    fi_shutdown(ct->ep, 0);
+    fi_shutdown(ct.ep, 0);
     pp_free_res(&ct);
 
     ffgcomp_finalize();

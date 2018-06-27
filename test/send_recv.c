@@ -15,7 +15,7 @@ int main(int argc, char * argv[]){
     if (argc!=2){
         printf("Usage: %s <count>\n", argv[0]);
         exit(1);
-    } 
+    }
 
     count = atoi(argv[1]);
 
@@ -34,14 +34,16 @@ int main(int argc, char * argv[]){
         for (int i=0; i<count; i++) buffer[i] = i;
         FFCALL(ffsend(buffer, count, FFINT32, 1, 0, 0, &op));
     }else{
-        FFCALL(ffrecv(buffer, count, FFINT32, 0, 0, 0, &op));        
+        FFCALL(ffrecv(buffer, count, FFINT32, 0, 0, 0, &op));
     }
-    
-    ffop_post(op);   
+
+    ffop_post(op);
     ffop_wait(op);
-       
+
+#ifdef FFLIB_HAVE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    
+#endif
+
     if (rank==1){
         int fail=0;
         for (int i=0; i<count; i++){
@@ -57,8 +59,8 @@ int main(int argc, char * argv[]){
 
     ffop_free(op);
 
-    fffinalize();   
+    fffinalize();
     free(buffer);
-    
+
     return 0;
 }

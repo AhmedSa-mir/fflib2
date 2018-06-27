@@ -16,7 +16,7 @@ int main(int argc, char * argv[]){
     if (argc!=3){
         printf("Usage: %s <count> <iters>\n", argv[0]);
         exit(1);
-    } 
+    }
 
     count = atoi(argv[1]);
     iters = atoi(argv[2]);
@@ -39,27 +39,28 @@ int main(int argc, char * argv[]){
             for (int i=0; i<count; i++) buffer_pong[i] = 0;
 
             FFCALL(ffsend(buffer_ping, count, FFINT32, 1, 0, 0, &pingop));
-            FFCALL(ffrecv(buffer_pong, count, FFINT32, 1, 0, 0, &pongop));        
+            FFCALL(ffrecv(buffer_pong, count, FFINT32, 1, 0, 0, &pongop));
 
-            ffop_post(pingop);   
-            ffop_post(pongop);   
+            ffop_post(pingop);
+            ffop_post(pongop);
 
         }else{ /* receiver */
 
             FFCALL(ffrecv(buffer_ping, count, FFINT32, 0, 0, 0, &pingop));
             FFCALL(ffsend(buffer_ping, count, FFINT32, 0, 0, 0, &pongop));
-        
+
             ffop_hb(pingop, pongop);
-    
-            ffop_post(pingop);   
-            //ffop_post(pongop); /* no need to post a dependent op! */  
+
+            ffop_post(pingop);
+            //ffop_post(pongop); /* no need to post a dependent op! */
         }
-    
+
         /* wait the pong to be received/sent */
         ffop_wait(pongop);
 
+#ifdef FFLIB_HAVE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-   
+#endif
 
         int fail=0;
         for (int i=0; i<count && rank==0; i++){
@@ -84,9 +85,9 @@ int main(int argc, char * argv[]){
         ffop_free(pongop);
     }
 
-    fffinalize();   
+    fffinalize();
     free(buffer_ping);
-    free(buffer_pong);    
+    free(buffer_pong);
 
     return 0;
 }
