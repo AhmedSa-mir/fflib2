@@ -17,5 +17,6 @@ set(LF_SRCS
 )
 
 add_library(ff_libfabric ${LF_SRCS})
+set_property(TARGET ff_libfabric PROPERTY CXX_STANDARD 14)
 
 add_subdirectory(test)
