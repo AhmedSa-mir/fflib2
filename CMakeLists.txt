@@ -93,7 +93,7 @@ if (FFLIB_HAVE_MPI)
 endif()
 
 #if (FFLIB_HAVE_GCOMP)
-  set(FFLIB_COMPONENT_SRCS ${FFLIB_COMPONENT_SRCS}
+  set(FFLIB_COMPONENT_C_SRCS ${FFLIB_COMPONENT_SRCS}
     src/components/gcomp/ffgcomp.c
     src/components/gcomp/ffop_gcomp.c
     src/components/gcomp/ffop_gcomp_operator.c
@@ -112,7 +112,12 @@ if (FFLIB_HAVE_LIBFABRIC)
     src/bindings/libfabric_binding.c
   )
 
+  set(FFLIB_CPP_COMPONENT_SRCS ${FFLIB_CPP_COMPONENT_SRCS}
+  	src/components/libfabric/connect_libfabric.cpp
+  )
+
   set_source_files_properties(${FFLIB_COMPONENT_SRCS} PROPERTIES LANGUAGE C)
+  set_source_files_properties(${FFLIB_CPP_COMPONENT_SRCS} PROPERTIES LANGUAGE CXX)
   set(FFLIB_LIBRARY_DEPENDENCIES ${LIBFABRIC_LIBRARIES})
 endif()
 
@@ -122,6 +127,7 @@ endif()
 add_library(fflib SHARED
   ${FFLIB_SRCS}
   ${FFLIB_COMPONENT_SRCS}
+  ${FFLIB_CPP_COMPONENT_SRCS}
 )
 
 set(CMAKE_C_FLAGS_DEBUG "-DFFDEBUG -g")

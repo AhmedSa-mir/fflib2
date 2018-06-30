@@ -6,7 +6,7 @@
 
 int fflibfabric_init(int * argc, char *** argv){
 
-    int ret = libfabric_init(argc, argv);
+    int ret = libfabric_init(argc, *(argv));
 
     if(!ret)
         return FFERROR;
