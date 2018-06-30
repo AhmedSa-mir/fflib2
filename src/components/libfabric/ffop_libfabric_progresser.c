@@ -62,13 +62,13 @@ int ffop_libfabric_progresser_progress(ffop_t ** ready_list){
     int ret = 0;
 
     // Look if we received something
-    ret = check_rx_completions();
+    ret = check_rx_completions(ready_list);
 
     if (!ret) return FFSUCCESS;
     else if (ret == 1) {
 
         // Look if some transfer completed
-        ret = check_tx_completions();
+        ret = check_tx_completions(ready_list);
 
         if (!ret) return FFSUCCESS;
         else if (ret == 1) return FFSUCCESS;

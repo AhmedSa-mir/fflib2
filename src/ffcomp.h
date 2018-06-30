@@ -13,7 +13,7 @@ typedef struct ffcomp{
 
     ffoperator_h operator_type; 
 
-    ffimpl_comp_data_t operator;
+    ffimpl_comp_data_t operator_;
 
 } ffcomp_t;
 

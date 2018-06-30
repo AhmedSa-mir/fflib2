@@ -141,7 +141,7 @@ struct ct_pingpong {
 
 } ct;
 
-int libfabric_init(int * argc, char *** argv)
+int libfabric_init(int * argc, char ** argv)
 {
     ct.port_s = argv[1];
     ct.remote_host = argv[2];
@@ -326,8 +326,8 @@ int libfabric_init(int * argc, char *** argv)
 
     std::cout << "Starting message handling loop!\n";
 
-    hpx::parcelset::app_state state = hpx::parcelsetf::app_state::initializing;
-f
+    hpx::parcelset::app_state state = hpx::parcelset::app_state::initializing;
+
     // The main message handling loop ...
     while (ct.running)
     {
@@ -559,18 +559,18 @@ void mr_release() {
     }
 }
 
-int check_rx_completions()
+int check_rx_completions(ffop_t ** ready_list)
 {
     struct fi_cq_msg_entry entry;
 
     // Look if we received something
-    ssize_t num_read = fi_cq_read(ct.endpoints[ep_idx].rxcq_, &entry, 1);
+    ssize_t num_read = fi_cq_read(ct.endpoints[ct.ep_idx].rxcq_, &entry, 1);
     
     if (num_read == 1) {
         printf("Got message \n");
         if (entry.flags & FI_RECV) {
             printf("  FI_RECV\n   length: %i\n",entry.len);
-            struct ctx* context = (struct ctx*) ct.recv_contexts[idx];
+            struct ctx* context = (struct ctx*) ct.recv_contexts[ct.ep_idx];
             op_complete(context, ready_list);
             return 0;
         }
@@ -581,7 +581,7 @@ int check_rx_completions()
     }
     else if (num_read == -FI_EAVAIL) {
         struct fi_cq_err_entry e = {};
-        int err_sz = fi_cq_readerr(ct.endpoints[ep_idx].rxcq_, &e ,0);
+        int err_sz = fi_cq_readerr(ct.endpoints[ct.ep_idx].rxcq_, &e ,0);
         printf("rxcq read error");
         return -1;
     }
@@ -589,17 +589,16 @@ int check_rx_completions()
     return -1;
 }
 
-int check_tx_completions()
+int check_tx_completions(ffop_t ** ready_list)
 {
     struct fi_cq_msg_entry entry;
 
     // Look if some transfer completed
-    ssize_t num_read = fi_cq_read(ct.endpoints[ep_idx].txcq_, &entry, 1);
+    ssize_t num_read = fi_cq_read(ct.endpoints[ct.ep_idx].txcq_, &entry, 1);
 
-    if (num_read == 1)
-    {
+    if (num_read == 1) {
         printf("Sent message\n");
-        struct ctx* context = (struct ctx*) ct.send_contexts[idx];
+        struct ctx* context = (struct ctx*) ct.send_contexts[ct.ep_idx];
         op_complete(context, ready_list);
         return 0;
     }
@@ -609,7 +608,7 @@ int check_tx_completions()
     }
     else if (num_read == -FI_EAVAIL) {
         struct fi_cq_err_entry e = {};
-        int err_sz = fi_cq_readerr(ct.endpoints[ep_idx].txcq_, &e ,0);
+        int err_sz = fi_cq_readerr(ct.endpoints[ct.ep_idx].txcq_, &e ,0);
         printf("txcq read error\n");
         return -1;
     }
@@ -620,19 +619,19 @@ int check_tx_completions()
 int post_recv(ffop_t * op)
 {
     // Bind operation with the context
-    set_op(ct.recv_contexts[ep_idx], op);
+    set_op(ct.recv_contexts[ct.ep_idx], op);
 
     // Post receive
     while(true)
     {
-        ct.status = fi_recv(ct.endpoints[ep_idx], ct.recv_messages[ep_idx], sizeof(ct.recv_messages[ep_idx]),
-                        fi_mr_desc(ct.mr_recv_messages[ep_idx]), 0, ct.recv_contexts[ep_idx]);
+        ct.status = fi_recv(ct.endpoints[ct.ep_idx].endpoint_, &ct.recv_messages[ct.ep_idx], sizeof(ct.recv_messages[ct.ep_idx]),
+                        fi_mr_desc(ct.mr_recv_messages[ct.ep_idx]), 0, ct.recv_contexts[ct.ep_idx]);
 
         if (ct.status) return 0;
         if (ct.status == hpx::parcelset::fabric_status::eagain()) continue;
         if (!ct.status)
         {
-            printf(ct.status.what());
+            printf(ct.status.what().c_str());
             return -1;
         }
     }
@@ -641,19 +640,19 @@ int post_recv(ffop_t * op)
 int post_send(ffop_t * op)
 {
     // Bind operation with the context
-    set_op(ct.send_contexts[ep_idx], op);
+    set_op(ct.send_contexts[ct.ep_idx], op);
 
     // Post send
     while(true)
     {
-        ct.status = fi_recv(ct.endpoints[ep_idx], ct.send_messages[ep_idx], sizeof(ct.send_messages[ep_idx]),
-                        fi_mr_desc(ct.mr_send_messages[ep_idx]), 0, ct.send_contexts[ep_idx]);
+        ct.status = fi_send(ct.endpoints[ct.ep_idx].endpoint_, &ct.send_messages[ct.ep_idx], sizeof(ct.send_messages[ct.ep_idx]),
+                        fi_mr_desc(ct.mr_send_messages[ct.ep_idx]), 0, ct.send_contexts[ct.ep_idx]);
 
         if (ct.status) return 0;
         if (ct.status == hpx::parcelset::fabric_status::eagain()) continue;
         if (!ct.status)
         {
-            printf(ct.status.what());
+            printf(ct.status.what().c_str());
             return -1;
         }
     }
