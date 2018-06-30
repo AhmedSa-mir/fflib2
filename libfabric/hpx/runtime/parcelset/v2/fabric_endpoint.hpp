@@ -42,7 +42,7 @@ namespace hpx { namespace parcelset { inline namespace v2 {
                 struct select_offset
                 {
                     // We only support 32 and 64 bit for now
-                    static_assert(Bytes == 8 || Bytes == 4);
+                    static_assert(Bytes == 8 || Bytes == 4,"select_offset");
                     static constexpr std::size_t value =
                         (Bytes == 8) ? 14695981039346656037ull : 2166136261;
                 };
@@ -51,7 +51,7 @@ namespace hpx { namespace parcelset { inline namespace v2 {
                 struct select_prime
                 {
                     // We only support 32 and 64 bit for now
-                    static_assert(Bytes == 8 || Bytes == 4);
+                    static_assert(Bytes == 8 || Bytes == 4,"select_prime");
                     static constexpr std::size_t value =
                         (Bytes == 8) ? 1099511628211 : 16777619;
                 };
