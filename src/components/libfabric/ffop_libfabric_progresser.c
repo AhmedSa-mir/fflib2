@@ -3,8 +3,6 @@
 #include "utils/ffarman.h"
 //#include "../utils/fflock.h"
 
-#include "libfabric_impl.h"
-
 //static ffop_t *    posted_ops[FFMPI_MAX_REQ];
 //static MPI_Request requests[FFMPI_MAX_REQ];
 static ffarman_t   index_manager;
@@ -61,36 +59,20 @@ int ffop_libfabric_progresser_release(uint32_t idx){
 
 int ffop_libfabric_progresser_progress(ffop_t ** ready_list){
 
-    struct fi_cq_msg_entry entry;
     int ret = 0;
 
-    // JB added this to get compilation working
-    struct fid_cq* txcq_ = NULL;
+    // Look if we received something
+    ret = check_rx_completions();
 
-    ret = fi_cq_read(txcq_, &entry, 1);
+    if (!ret) return FFSUCCESS;
+    else if (ret == 1) {
 
-    if (ret > 0) {
+        // Look if some transfer completed
+        ret = check_tx_completions();
 
-        if (entry.flags == (FI_SEND | FI_RECV)) {
-            struct ctx* handler = (struct ctx*)(entry.op_context);
-            op_complete(handler, ready_list);
-        }
-        return FFSUCCESS;
+        if (!ret) return FFSUCCESS;
+        else if (ret == 1) return FFSUCCESS;
+        else return FFERROR;
     }
-    else if (ret == 0 || ret == -FI_EAGAIN) {
-        // return and try again
-        return FFSUCCESS;
-    }
-    else if (ret == -FI_EAVAIL) {
-        struct fi_cq_err_entry e = {};
-        int err_sz = fi_cq_readerr(txcq_, &e ,0);
-        FFLOG_ERROR("txcq read error");
-        return FFERROR;
-    }
-    else {
-        FFLOG_ERROR("Unknown error in txcq read");
-        return FFERROR;
-    }
+    else return FFERROR;
 }
-
-

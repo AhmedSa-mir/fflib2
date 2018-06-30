@@ -2,7 +2,8 @@
 #include "ffop_libfabric.h"
 #include "ffop_libfabric_progresser.h"
 #include "ffrecv.h"
-#include "libfabric_impl.h"
+
+extern int post_recv(ffop_t * op);
 
 int ffop_libfabric_recv_post(ffop_t * op, ffop_mem_set_t * mem){
     int ret;
@@ -19,11 +20,12 @@ int ffop_libfabric_recv_post(ffop_t * op, ffop_mem_set_t * mem){
     void * buffer;
     GETBUFFER(recv->buffer, mem, buffer);
 
-    ret = fi_recv(ct.ep, ct.rx_buf, MAX(ct.rx_size, PP_MAX_CTRL_MSG) + ct.msg_prefix_size,
-                    fi_mr_desc(ct.mr), 0, ct.ctx_ptr);
+    ret = post_recv(op);
 
-    if (ret)
+    if (ret == -1)
+    {
         return FFERROR;
-
+    }
+    
     return ffop_libfabric_progresser_track(op);
 }

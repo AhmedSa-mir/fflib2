@@ -2,7 +2,8 @@
 #include "ffop_libfabric.h"
 #include "ffop_libfabric_progresser.h"
 #include "ffsend.h"
-#include "libfabric_impl.h"
+
+extern int post_send(ffop_t * op);
 
 int ffop_libfabric_send_post(ffop_t * op, ffop_mem_set_t * mem){
     int ret;
@@ -22,11 +23,12 @@ int ffop_libfabric_send_post(ffop_t * op, ffop_mem_set_t * mem){
     void * buffer;
     GETBUFFER(send->buffer, mem, buffer)
 
-    ret = fi_send(ct.ep, ct.tx_buf, ct.opts.transfer_size + ct.msg_prefix_size,
-                    fi_mr_desc(ct.mr), ct.remote_fi_addr, ct.ctx_ptr);
+    ret = post_send(op);
 
-    if (ret)
+    if (ret == -1)
+    {
         return FFERROR;
+    }
 
     return ffop_libfabric_progresser_track(op);
 }
