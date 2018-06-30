@@ -3,6 +3,9 @@
 
 #include "ffinternal.h"
 
+extern int libfabric_init(int * argc, char *** argv);
+extern void mr_release();
+
 int fflibfabric_bind(ffdescr_t * descr);
 
 int fflibfabric_init(int * argc, char *** argv);

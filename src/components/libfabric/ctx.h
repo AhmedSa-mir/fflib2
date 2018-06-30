@@ -24,3 +24,5 @@ struct ctx
 };
 
 void op_complete(struct ctx *context, ffop_t ** ready_list);
+
+void set_op(struct ctx *context, ffop_t * op);
