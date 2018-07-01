@@ -5,14 +5,14 @@
 #include "fflocks.h"
 
 int ffop_gcomp_init(ffop_t * op){
-    return ffop_gcomp_operator_get(op->comp.operator_type, &(op->comp.operator));
+    return ffop_gcomp_operator_get(op->comp.operator_type, &(op->comp.operator_));
 }
 
 
 int ffop_gcomp_post(ffop_t * op, ffop_mem_set_t * mem){
-    
+
     ffcomp_t * comp = &(op->comp);
-    
+
 #ifdef CHECK_ARGS
     if (op==NULL || op->type!=FFCOMP) {
         FFLOG_ERROR("Invalid argument!");
