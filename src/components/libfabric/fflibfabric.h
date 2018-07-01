@@ -3,8 +3,9 @@
 
 #include "ffinternal.h"
 
-extern int libfabric_init(int * argc, char *** argv);
-extern void mr_release();
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int fflibfabric_bind(ffdescr_t * descr);
 
@@ -15,5 +16,9 @@ int fflibfabric_register_op(int op, ffop_descriptor_t * descr);
 
 int fflibfabric_get_rank();
 int fflibfabric_get_size();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _FFLIBFABRIC_H_ */

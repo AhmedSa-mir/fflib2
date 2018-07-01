@@ -1,6 +1,8 @@
 
 #include "ffop_libfabric_progresser.h"
 #include "utils/ffarman.h"
+#include "ctx.h"
+
 //#include "../utils/fflock.h"
 
 //static ffop_t *    posted_ops[FFMPI_MAX_REQ];
