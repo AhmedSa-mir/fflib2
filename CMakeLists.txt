@@ -75,7 +75,7 @@ set(FFLIB_SRCS
 )
 
 if (FFLIB_HAVE_MPI)
-  set(FFLIB_COMPONENT_SRCS
+    set(FFLIB_COMPONENT_C_SRCS
     src/components/mpi/ffmpi.c
     src/components/mpi/ffop_mpi.c
     src/components/mpi/ffop_mpi_init.c
@@ -89,7 +89,7 @@ if (FFLIB_HAVE_MPI)
 endif()
 
 #if (FFLIB_HAVE_GCOMP)
-  set(FFLIB_COMPONENT_C_SRCS ${FFLIB_COMPONENT_SRCS}
+set(FFLIB_COMPONENT_C_SRCS ${FFLIB_COMPONENT_C_SRCS}
     src/components/gcomp/ffgcomp.c
     src/components/gcomp/ffop_gcomp.c
     src/components/gcomp/ffop_gcomp_operator.c
@@ -97,7 +97,7 @@ endif()
 #endif()
 
 if (FFLIB_HAVE_LIBFABRIC)
-  set(FFLIB_COMPONENT_SRCS ${FFLIB_COMPONENT_SRCS}
+  set(FFLIB_COMPONENT_C_SRCS ${FFLIB_COMPONENT_C_SRCS}
     src/components/libfabric/ctx.c
     src/components/libfabric/fflibfabric.c
     src/components/libfabric/ffop_libfabric_init.c
@@ -108,13 +108,18 @@ if (FFLIB_HAVE_LIBFABRIC)
     src/bindings/libfabric_binding.c
   )
 
-  set(FFLIB_CPP_COMPONENT_SRCS ${FFLIB_CPP_COMPONENT_SRCS}
-  	src/components/libfabric/connect_libfabric.cpp
+  #--------------------------------------------------
+  # Thomas Heller's libfabric connection experiment
+  #--------------------------------------------------
+  add_subdirectory(libfabric)
+
+  set(FFLIB_COMPONENT_CPP_SRCS ${FFLIB_COMPONENT_CPP_SRCS}
+    src/components/libfabric/connect_libfabric.cpp
   )
 
-  set_source_files_properties(${FFLIB_COMPONENT_SRCS} PROPERTIES LANGUAGE C)
-  set_source_files_properties(${FFLIB_CPP_COMPONENT_SRCS} PROPERTIES LANGUAGE CXX)
-  set(FFLIB_LIBRARY_DEPENDENCIES ${LIBFABRIC_LIBRARIES})
+  set_source_files_properties(${FFLIB_COMPONENT_C_SRCS} PROPERTIES LANGUAGE C)
+  set_source_files_properties(${FFLIB_COMPONENT_CPP_SRCS} PROPERTIES LANGUAGE CXX)
+  set(FFLIB_LIBRARY_DEPENDENCIES ff_libfabric ${LIBFABRIC_LIBRARIES})
 endif()
 
 #--------------------------------------------------
@@ -122,8 +127,8 @@ endif()
 #--------------------------------------------------
 add_library(fflib SHARED
   ${FFLIB_SRCS}
-  ${FFLIB_COMPONENT_SRCS}
-  ${FFLIB_CPP_COMPONENT_SRCS}
+  ${FFLIB_COMPONENT_C_SRCS}
+  ${FFLIB_COMPONENT_CPP_SRCS}
 )
 
 set(CMAKE_C_FLAGS_DEBUG "-DFFDEBUG -g")
@@ -142,14 +147,6 @@ install(TARGETS fflib
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(FILES ${CMAKE_BINARY_DIR}/fflib.pc
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
-
-#--------------------------------------------------
-# Thomas Heller's libfabric connection experiment
-#--------------------------------------------------
-if (FFLIB_HAVE_LIBFABRIC)
-  add_subdirectory(libfabric)
-endif()
-
 
 #--------------------------------------------------
 # Tests

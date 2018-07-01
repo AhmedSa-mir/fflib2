@@ -1,12 +1,14 @@
 
 #include "ff.h"
 #include "ffinternal.h"
+#include "components/gcomp/ffgcomp.h"
 #include "fflibfabric.h"
+#include "ctx.h"
 
 
 int fflibfabric_init(int * argc, char *** argv){
 
-    int ret = libfabric_init(argc, *(argv));
+    int ret = libfabric_init(*argc, *(argv));
 
     if(!ret)
         return FFERROR;

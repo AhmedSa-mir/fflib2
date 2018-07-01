@@ -23,13 +23,6 @@
 #include "ctx.h"
 #include "ffop_libfabric.h"
 
-extern "C" int libfabric_init(int *, char ***);
-extern "C" void mr_release();
-extern "C" int check_tx_completions();
-extern "C" int check_rx_completions();
-extern "C" int post_send();
-extern "C" int post_recv();
-
 namespace hpx { namespace parcelset { inline namespace v2 {
 
     enum class message_type : std::uint8_t
@@ -141,7 +134,7 @@ struct ct_pingpong {
 
 } ct;
 
-int libfabric_init(int * argc, char ** argv)
+int libfabric_init(int argc, char ** argv)
 {
     ct.port_s = argv[1];
     ct.remote_host = argv[2];
@@ -321,7 +314,7 @@ int libfabric_init(int * argc, char ** argv)
     {
         std::cout << "Could not find infos about remote host...\n";
     }
-    
+
     ct.running = true;
 
     std::cout << "Starting message handling loop!\n";
@@ -542,6 +535,7 @@ int libfabric_init(int * argc, char ** argv)
             return 0;
         }
     }
+    return -1;
 }
 
 void mr_release() {
@@ -565,7 +559,7 @@ int check_rx_completions(ffop_t ** ready_list)
 
     // Look if we received something
     ssize_t num_read = fi_cq_read(ct.endpoints[ct.ep_idx].rxcq_, &entry, 1);
-    
+
     if (num_read == 1) {
         printf("Got message \n");
         if (entry.flags & FI_RECV) {
