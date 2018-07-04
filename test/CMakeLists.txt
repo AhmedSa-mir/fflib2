@@ -8,6 +8,7 @@ find_package(MPI REQUIRED)
 #--------------------------------------------------
 set(TEST_C_SRCS
   send_recv
+  send_recv_libfabric
   ping_pong_dep
   #  custom_computation
   ping_pong_schedule

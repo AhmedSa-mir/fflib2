@@ -127,8 +127,9 @@ struct ct_pingpong {
     fid_mr no_mr;
     std::vector<fid_mr *> mr_recv_messages;
     std::vector<fid_mr *> mr_send_messages;
-    std::vector<ctx *> recv_contexts;
-    std::vector<ctx *> send_contexts;
+    std::vector<fi_context> recv_contexts;
+    std::vector<fi_context> send_contexts;
+    std::vector<ffop_t *> ops;
 
     bool running;
 
@@ -199,6 +200,7 @@ int libfabric_init(int argc, char ** argv)
     ct.mr_send_messages.resize(endpoints.size());
     ct.recv_contexts.resize(endpoints.size());
     ct.send_contexts.resize(endpoints.size());
+    ct.ops.resize(endpoints.size());
 
     for (std::size_t i = 0; i != endpoints.size(); ++i)
     {
@@ -350,7 +352,7 @@ int libfabric_init(int argc, char ** argv)
                 {
                         std::cout << "  FI_RMA\n";
                 }
-                std::cout << "   length: " << entry.len << '\n';
+                std::cout << "  length: " << entry.len << '\n';
                 auto& message = ct.recv_messages[idx];
                 auto& mr = ct.mr_recv_messages[idx];
                 auto& context = ct.recv_contexts[idx];
@@ -528,12 +530,8 @@ int libfabric_init(int argc, char ** argv)
                 }
             }
         }
-
-        // connection established
         if(state == hpx::parcelset::app_state::pingpong1)
-        {
             return 0;
-        }
     }
     return -1;
 }
@@ -563,9 +561,9 @@ int check_rx_completions(ffop_t ** ready_list)
     if (num_read == 1) {
         printf("Got message \n");
         if (entry.flags & FI_RECV) {
-            printf("  FI_RECV\n   length: %i\n",entry.len);
-            struct ctx* context = (struct ctx*) ct.recv_contexts[ct.ep_idx];
-            op_complete(context, ready_list);
+            printf("  FI_RECV\n  length: %i\n",entry.len);
+            FFOP_COMPLETED(ct.ops[ct.ep_idx]);
+            FFOP_ENQUEUE(ct.ops[ct.ep_idx], ready_list);
             return 0;
         }
     }
@@ -592,8 +590,8 @@ int check_tx_completions(ffop_t ** ready_list)
 
     if (num_read == 1) {
         printf("Sent message\n");
-        struct ctx* context = (struct ctx*) ct.send_contexts[ct.ep_idx];
-        op_complete(context, ready_list);
+        FFOP_COMPLETED(ct.ops[ct.ep_idx]);
+        FFOP_ENQUEUE(ct.ops[ct.ep_idx], ready_list);
         return 0;
     }
     else if (num_read == 0 || num_read == -FI_EAGAIN) {
@@ -612,14 +610,14 @@ int check_tx_completions(ffop_t ** ready_list)
 
 int post_recv(ffop_t * op)
 {
-    // Bind operation with the context
-    set_op(ct.recv_contexts[ct.ep_idx], op);
+    // Store operation
+    ct.ops[ct.ep_idx] = op;
 
     // Post receive
     while(true)
     {
         ct.status = fi_recv(ct.endpoints[ct.ep_idx].endpoint_, &ct.recv_messages[ct.ep_idx], sizeof(ct.recv_messages[ct.ep_idx]),
-                        fi_mr_desc(ct.mr_recv_messages[ct.ep_idx]), 0, ct.recv_contexts[ct.ep_idx]);
+                        fi_mr_desc(ct.mr_recv_messages[ct.ep_idx]), 0, &ct.recv_contexts[ct.ep_idx]);
 
         if (ct.status) return 0;
         if (ct.status == hpx::parcelset::fabric_status::eagain()) continue;
@@ -633,14 +631,14 @@ int post_recv(ffop_t * op)
 
 int post_send(ffop_t * op)
 {
-    // Bind operation with the context
-    set_op(ct.send_contexts[ct.ep_idx], op);
+    // Store operation
+    ct.ops[ct.ep_idx] = op;
 
     // Post send
     while(true)
     {
         ct.status = fi_send(ct.endpoints[ct.ep_idx].endpoint_, &ct.send_messages[ct.ep_idx], sizeof(ct.send_messages[ct.ep_idx]),
-                        fi_mr_desc(ct.mr_send_messages[ct.ep_idx]), 0, ct.send_contexts[ct.ep_idx]);
+                        fi_mr_desc(ct.mr_send_messages[ct.ep_idx]), 0, &ct.send_contexts[ct.ep_idx]);
 
         if (ct.status) return 0;
         if (ct.status == hpx::parcelset::fabric_status::eagain()) continue;
@@ -650,4 +648,24 @@ int post_send(ffop_t * op)
             return -1;
         }
     }
+}
+
+void * get_send_buffer()
+{
+    return &ct.send_messages[ct.ep_idx];
+}
+
+void * get_recv_buffer()
+{
+    return &ct.recv_messages[ct.ep_idx];
+}
+
+int get_locality_id()
+{
+    return ct.locality_id;
+}
+
+int get_remote_locality_id()
+{
+    return ct.remote_locality_id;
 }
