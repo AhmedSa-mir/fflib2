@@ -3,8 +3,6 @@
 #include "ffop_libfabric_progresser.h"
 #include "ffrecv.h"
 
-extern int post_recv(ffop_t * op);
-
 int ffop_libfabric_recv_post(ffop_t * op, ffop_mem_set_t * mem){
     int ret;
 
@@ -23,9 +21,7 @@ int ffop_libfabric_recv_post(ffop_t * op, ffop_mem_set_t * mem){
     ret = post_recv(op);
 
     if (ret == -1)
-    {
         return FFERROR;
-    }
     
-    return ffop_libfabric_progresser_track(op);
+    return ffop_libfabric_progresser_track();
 }

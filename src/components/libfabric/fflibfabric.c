@@ -8,6 +8,7 @@
 
 int fflibfabric_init(int * argc, char *** argv){
 
+    // Initialize libfabric connection
     int ret = libfabric_init(*argc, *(argv));
 
     if(!ret)
@@ -22,6 +23,7 @@ int fflibfabric_init(int * argc, char *** argv){
 int fflibfabric_finalize(){
 
     // fi_close() ?
+    mr_release();
 
     ffgcomp_finalize();
 
@@ -29,11 +31,11 @@ int fflibfabric_finalize(){
 }
 
 int fflibfabric_get_rank(int * rank){
-    //MPI_Comm_rank(MPI_COMM_WORLD, rank);
+    *rank = get_locality_id();
     return FFSUCCESS;
 }
 
 int fflibfabric_get_size(int * size){
-    //MPI_Comm_size(MPI_COMM_WORLD, size);
+    *size = 2;	// To be changed
     return FFSUCCESS;
 }

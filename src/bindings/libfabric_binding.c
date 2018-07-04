@@ -12,6 +12,8 @@ int ffbind(ffdescr_t * ffdescr){
 
     ffdescr->impl.init = fflibfabric_init;
     ffdescr->impl.finalize = fflibfabric_finalize;
+    ffdescr->impl.get_rank = fflibfabric_get_rank;
+    ffdescr->impl.get_size = fflibfabric_get_size;
 
     ffdescr->impl.ops[FFSEND].init = ffop_libfabric_init;
     ffdescr->impl.ops[FFSEND].post = ffop_libfabric_send_post;

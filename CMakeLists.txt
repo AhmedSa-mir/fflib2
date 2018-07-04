@@ -53,6 +53,7 @@ if (fflib_PROVIDER STREQUAL "libfabric")
     libfabric
     ${CMAKE_CURRENT_SOURCE_DIR}
   )
+
   set(FFLIB_HAVE_LIBFABRIC 1)
   add_definitions(-DFFLIB_HAVE_LIBFABRIC)
 endif()
@@ -102,7 +103,6 @@ set(FFLIB_COMPONENT_C_SRCS ${FFLIB_COMPONENT_C_SRCS}
 
 if (FFLIB_HAVE_LIBFABRIC)
   set(FFLIB_COMPONENT_C_SRCS ${FFLIB_COMPONENT_C_SRCS}
-    src/components/libfabric/ctx.c
     src/components/libfabric/fflibfabric.c
     src/components/libfabric/ffop_libfabric_init.c
     src/components/libfabric/ffop_libfabric_progresser.c

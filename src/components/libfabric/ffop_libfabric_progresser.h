@@ -7,7 +7,7 @@
 int ffop_libfabric_progresser_init();
 int ffop_libfabric_progresser_finalize();
 
-int ffop_libfabric_progresser_track(ffop_t * op);
+int ffop_libfabric_progresser_track();
 int ffop_libfabric_progresser_progress(ffop_t ** ready_list);
 
 
