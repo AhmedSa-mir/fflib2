@@ -8,8 +8,14 @@
 
 int main(int argc, char * argv[]){
 
-    int count = 10, rank, size;	
+    int count = 10, rank, size, ret;
     char * buffer;
+
+    if (argc != 4)
+    {
+        printf("Usage: %s <port> <remote_host> <remote_port>\n", argv[0]);
+        return 1;
+    }
 
     ffinit(&argc, &argv);
 
