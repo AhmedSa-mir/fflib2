@@ -531,7 +531,10 @@ int libfabric_init(int argc, char ** argv)
             }
         }
         if(state == hpx::parcelset::app_state::pingpong1)
+        {
+            printf("Connection established\n");
             return 0;
+        }
     }
     return -1;
 }

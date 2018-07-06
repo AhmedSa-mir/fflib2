@@ -30,7 +30,7 @@ int ffop_libfabric_progresser_track(){
     uint32_t idx = ffarman_get(&index_manager);
 
     if (idx < 0){
-       FFLOG_ERROR("Too many in-flight MPI operations! (check FFMPI_MAX_REQ)");
+       FFLOG_ERROR("Too many in-flight operations! (check FFLIBFABRIC_MAX_REQ)");
        return FFENOMEM;
     }
 
