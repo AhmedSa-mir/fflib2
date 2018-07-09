@@ -2,14 +2,22 @@
 # setup tests
 #--------------------------------------------------
 set(TEST_C_SRCS
-  send_recv
-  send_recv_libfabric
   ping_pong_dep
   #  custom_computation
   ping_pong_schedule
   allreduce
 )
 
+if(FFLIB_HAVE_MPI)
+  set(TEST_C_SRCS ${TEST_C_SRCS}
+    send_recv
+  )
+elseif(FFLIB_HAVE_LIBFABRIC)     
+  set(TEST_C_SRCS ${TEST_C_SRCS}
+    send_recv_libfabric
+  )
+endif()
+ 
 set(TEST_CPP_SRCS
 )
 
