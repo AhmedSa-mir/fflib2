@@ -32,7 +32,9 @@ int main(int argc, char * argv[]){
     ffschedule_h allreduce;
     ffallreduce(to_reduce, reduced, count, 0, FFSUM, FFINT32, &allreduce);
 
+#ifdef FFLIB_HAVE_MPI
     MPI_Barrier(MPI_COMM_WORLD); //not needed, just for having nice output
+#endif
     for (int i=0; i<N; i++){
         
         for (int j=0; j<count; j++){
