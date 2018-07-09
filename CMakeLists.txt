@@ -78,7 +78,6 @@ set(FFLIB_SRCS
   src/colls/ffallreduce.c
 )
 
-
 if (FFLIB_HAVE_MPI)
     set(FFLIB_COMPONENT_C_SRCS
     src/components/mpi/ffmpi.c
@@ -143,7 +142,7 @@ set_target_properties(fflib PROPERTIES
     PUBLIC_HEADER src/ff.h)
 include_directories(fflib src)
 
-target_link_libraries(fflib ${FFLIB_LIBRARY_DEPENDENCIES})
+target_link_libraries(fflib m ${FFLIB_LIBRARY_DEPENDENCIES})
 
 configure_file(fflib.pc.in fflib.pc @ONLY)
 install(TARGETS fflib
