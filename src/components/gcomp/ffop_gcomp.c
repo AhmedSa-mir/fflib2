@@ -36,7 +36,7 @@ int ffop_gcomp_post(ffop_t * op, ffop_mem_set_t * mem){
     uint32_t size = MIN(comp->buffer1.count, comp->buffer2.count, comp->buffer3.count);
     ffdatatype_h datatype = comp->buffer1.datatype; // they are the same
 
-    int res = comp->operator.op_fun(buffer1, buffer2, buffer3, size, datatype);
+    int res = comp->operator_.op_fun(buffer1, buffer2, buffer3, size, datatype);
 
     if (IS_OPT_SET(op, FFCOMP_DEST_ATOMIC)){
         FFLOCK_UNLOCK(&(comp->buffer3.lock));
