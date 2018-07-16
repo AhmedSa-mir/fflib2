@@ -565,7 +565,7 @@ int check_rx_completions(ffop_t ** ready_list)
         printf("Got message \n");
         if (entry.flags & FI_RECV) {
             printf("  FI_RECV\n  length: %i\n",entry.len);
-            FFOP_COMPLETED(ct.ops[ct.ep_idx]);
+            FFOP_IS_COMPLETED(ct.ops[ct.ep_idx]);
             FFOP_ENQUEUE(ct.ops[ct.ep_idx], ready_list);
             return 0;
         }
@@ -593,7 +593,7 @@ int check_tx_completions(ffop_t ** ready_list)
 
     if (num_read == 1) {
         printf("Sent message\n");
-        FFOP_COMPLETED(ct.ops[ct.ep_idx]);
+        FFOP_IS_COMPLETED(ct.ops[ct.ep_idx]);
         FFOP_ENQUEUE(ct.ops[ct.ep_idx], ready_list);
         return 0;
     }
