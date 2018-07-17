@@ -36,8 +36,9 @@ FFLOG("DOT#\"%i.%s\" -> \"%i.%s\"\n", dbg_myrank, dot_a, dbg_myrank, dot_b); \
 #define FFGRAPH(A, B) 
 #endif
 
-
-#define MIN(a, b, c) (((a<b ? a : b) < c) ? (a<b ? a : b) : c)
+#ifndef MIN
+ #define MIN(a, b, c) (((a<b ? a : b) < c) ? (a<b ? a : b) : c)
+#endif
 
 #define FFSEND    0
 #define FFRECV    1
