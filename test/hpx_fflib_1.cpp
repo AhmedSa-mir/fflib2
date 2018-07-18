@@ -14,6 +14,7 @@ extern "C" {
 //
 #include "plugins/parcelport/libfabric/libfabric_controller.hpp"
 #include "plugins/parcelport/libfabric/parcelport_libfabric.hpp"
+#include "plugins/parcelport/parcelport_logging.hpp"
 //
 // to run in 3 terminql sessions on the same machine
 // ./bin/hpx_fflib_1 --hpx:localities=3 --hpx:node=0 -Ihpx.parcel.bootstrap=tcp --hpx:ini=hpx.parcel.libfabric.enable=1  --hpx:run-hpx-main --operation=allreduce
@@ -39,7 +40,10 @@ int get_locality_id()                {
     uint64_t     rank = hpx::naming::get_locality_id_from_id(here);
     return rank;
 }
-
+// ------------------------------------------------------------------------
+int get_num_localities() {
+    return hpx::get_num_localities().get();
+}
 // ------------------------------------------------------------------------
 int test_fflib_send_recv()
 {
@@ -57,11 +61,16 @@ int test_fflib_allreduce()
   int   count = 1000;
   const int N = 100;
   int  failed = 0;
+  int argc = 0;
+  char ** argv = nullptr;
 
-  ffinit(0, nullptr);
+  LOG_DEBUG_MSG("Calling ffinit" << std::endl);
+  ffinit(&argc, &argv);
 
+  LOG_DEBUG_MSG("Calling ffrank/size");
   ffrank(&rank);
   ffsize(&size);
+  LOG_DEBUG_MSG("rank" << decnumber(rank) << "of size" << decnumber(size));
 
   // make sure we use int32 since the reduce test uses FFINT32
   std::vector<int32_t> to_reduce(count);
@@ -107,29 +116,34 @@ int test_fflib_allreduce()
 }
 
 // ------------------------------------------------------------------------
-void test_function(int a) {
-    std::cout << a << std::endl;
+void test_function(std::vector<int> a) {
+    hpx::id_type                    here = hpx::find_here();
+    uint64_t                        rank = hpx::naming::get_locality_id_from_id(here);
+    std::cout << "Executing test function with " << a[0] << " on rank " << rank << std::endl;
 }
 // declare an action type
 HPX_DEFINE_PLAIN_ACTION(test_function, test_action);
 HPX_REGISTER_ACTION_DECLARATION(test_action);
-
 // register the action type
 HPX_REGISTER_ACTION(test_action);
 
 int test_hpx_send_recv()
 {
   std::cout << "Testing HPX async function" << std::endl;
+  hpx::id_type                    here = hpx::find_here();
+  uint64_t                        rank = hpx::naming::get_locality_id_from_id(here);
   std::vector<hpx::id_type>    remotes = hpx::find_remote_localities();
   std::vector<hpx::id_type> localities = hpx::find_all_localities();
   //
   int x= 0;
+  std::vector<int> dummy(1000000);
   test_action test;
-  for (auto l : localities) {
+  // on every rank, call every rank.
+  for (auto l : remotes) {
       // execute the function 'test_function' on the remote locality
       // passing the argument x.
       // this will trigger the sending of a message encoding the action and x
-      hpx::async(test, l, x);
+      hpx::async(test, l, dummy);
   }
 
   // get the parcelhandler
@@ -156,8 +170,9 @@ int test_hpx_send_recv()
   std::cout << "Got pointer to Parcelport pointer of type " << lf->type() << std::endl;
   // get a pointer to the libfabric controller
   libfabric::libfabric_controller_ptr lc = lf->libfabric_controller_;
+
   // you can now access the libfabric controller using
-  // lc->do_stuff()...
+//  lc->poll_endpoints();
 
   // insert fflib testing code here
   return 0;

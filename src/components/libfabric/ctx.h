@@ -16,6 +16,7 @@ int  post_recv(ffop_t * op);
 void * get_send_buffer();
 void * get_recv_buffer();
 int get_locality_id();
+int get_num_localities();
 int get_remote_locality_id();
 void mr_release();
 

@@ -36,6 +36,6 @@ int fflibfabric_get_rank(int * rank){
 }
 
 int fflibfabric_get_size(int * size){
-    *size = 2;	// To be changed
+    *size = get_num_localities();
     return FFSUCCESS;
 }
