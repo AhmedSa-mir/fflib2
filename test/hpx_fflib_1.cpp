@@ -8,6 +8,9 @@
 #include <vector>
 
 #include "components/libfabric/ctx.h"
+//
+#include "plugins/parcelport/libfabric/libfabric_controller.hpp"
+#include "plugins/parcelport/libfabric/parcelport_libfabric.hpp"
 
 // to run in 3 terminql sessions on the same machine
 // ./bin/hpx_fflib_1 --hpx:localities=3 --hpx:node=0 -Ihpx.parcel.bootstrap=tcp --hpx:ini=hpx.parcel.libfabric.enable=1  --hpx:run-hpx-main --operation=allreduce
@@ -34,7 +37,6 @@ int get_locality_id()                {
     return rank;
 }
 
-
 // ------------------------------------------------------------------------
 int test_fflib_send_recv()
 {
@@ -50,6 +52,64 @@ int test_fflib_allreduce()
   // insert fflib testing code here
   return 0;
 }
+
+// ------------------------------------------------------------------------
+void test_function(int a) {
+    std::cout << a << std::endl;
+}
+// declare an action type
+HPX_DEFINE_PLAIN_ACTION(test_function, test_action);
+HPX_REGISTER_ACTION_DECLARATION(test_action);
+
+// register the action type
+HPX_REGISTER_ACTION(test_action);
+
+int test_hpx_send_recv()
+{
+  std::cout << "Testing HPX async function" << std::endl;
+  std::vector<hpx::id_type>    remotes = hpx::find_remote_localities();
+  std::vector<hpx::id_type> localities = hpx::find_all_localities();
+  //
+  int x= 0;
+  test_action test;
+  for (auto l : localities) {
+      // execute the function 'test_function' on the remote locality
+      // passing the argument x.
+      // this will trigger the sending of a message encoding the action and x
+      hpx::async(test, l, x);
+  }
+
+  // get the parcelhandler
+  hpx::parcelset::parcelhandler &ph = hpx::get_runtime().get_parcel_handler();
+  std::cout << "Calling background work on local parcelport\n";
+  ph.do_background_work();
+
+  std::ostringstream buf;
+  ph.list_parcelports(buf);
+  std::cout << "parcelports are :\n" << buf.str() << std::endl;
+
+  auto pp = ph.get_default_parcelport();
+  if (pp->type()!="libfabric") {
+      throw std::runtime_error("This code only work with libfabric parcelport");
+  }
+
+  using namespace hpx::parcelset::policies;
+  // convert pointer to proper libfabric parcelport type instead of virtual base class
+  std::shared_ptr<libfabric::parcelport> lf =
+    std::dynamic_pointer_cast<libfabric::parcelport>(pp);
+  if (lf==nullptr) {
+      throw std::runtime_error("This should not be null");
+  }
+  std::cout << "Got pointer to Parcelport pointer of type " << lf->type() << std::endl;
+  // get a pointer to the libfabric controller
+  libfabric::libfabric_controller_ptr lc = lf->libfabric_controller_;
+  // you can now access the libfabric controller using
+  // lc->do_stuff()...
+
+  // insert fflib testing code here
+  return 0;
+}
+
 
 // ------------------------------------------------------------------------
 // This runs on an HPX thread
@@ -78,6 +138,9 @@ int hpx_main(boost::program_options::variables_map &vm)
     }
     else if (op == "allreduce") {
         test_fflib_allreduce();
+    }
+    else if (op == "async") {
+        test_hpx_send_recv();
     }
     else {
         std::cout << "usage --operation=sendrecv/allreduce : " << std::endl;
