@@ -6,17 +6,20 @@
 #include <numeric>
 #include <string>
 #include <vector>
-
-#include "components/libfabric/ctx.h"
+//
+extern "C" {
+  #include "ff.h"
+  #include "components/libfabric/ctx.h"
+}
 //
 #include "plugins/parcelport/libfabric/libfabric_controller.hpp"
 #include "plugins/parcelport/libfabric/parcelport_libfabric.hpp"
-
+//
 // to run in 3 terminql sessions on the same machine
 // ./bin/hpx_fflib_1 --hpx:localities=3 --hpx:node=0 -Ihpx.parcel.bootstrap=tcp --hpx:ini=hpx.parcel.libfabric.enable=1  --hpx:run-hpx-main --operation=allreduce
 // ./bin/hpx_fflib_1 --hpx:localities=3 --hpx:node=1 -Ihpx.parcel.bootstrap=tcp --hpx:ini=hpx.parcel.libfabric.enable=1  --hpx:run-hpx-main --operation=allreduce
 // ./bin/hpx_fflib_1 --hpx:localities=3 --hpx:node=2 -Ihpx.parcel.bootstrap=tcp --hpx:ini=hpx.parcel.libfabric.enable=1  --hpx:run-hpx-main --operation=allreduce
-
+//
 // alternatively, use the hpxrun python script to launch N copies of the binary
 // use "--" to separate the arguments for the binary from the arguments to hpxrun
 // /home/biddisco/build/hpx-debug/bin/hpxrun.py -l 8 bin/hpx_fflib_1 -- --hpx:ini=hpx.parcel.bootstrap=tcp --hpx:ini=hpx.parcel.libfabric.enable=1 --hpx:run-hpx-main
@@ -49,7 +52,57 @@ int test_fflib_send_recv()
 int test_fflib_allreduce()
 {
   std::cout << "Testing AllReduce " << std::endl;
-  // insert fflib testing code here
+
+  int rank, size;
+  int   count = 1000;
+  const int N = 100;
+  int  failed = 0;
+
+  ffinit(0, nullptr);
+
+  ffrank(&rank);
+  ffsize(&size);
+
+  // make sure we use int32 since the reduce test uses FFINT32
+  std::vector<int32_t> to_reduce(count);
+  std::vector<int32_t> reduced(count);
+
+  ffschedule_h allreduce;
+  ffallreduce(to_reduce.data(), reduced.data(), count, 0, FFSUM, FFINT32, &allreduce);
+
+#ifdef FFLIB_HAVE_MPI
+  MPI_Barrier(MPI_COMM_WORLD); //not needed, just for having nice output
+#endif
+  for (int i=0; i<N; i++)
+  {
+      for (int j=0; j<count; j++){
+          to_reduce[j] = i+j;
+          reduced[j] = 0;
+      }
+
+      ffschedule_post(allreduce);
+      ffschedule_wait(allreduce);
+
+      for (int j=0; j<count; j++){
+          if (reduced[j] != (i+j)*size){
+              printf("FAILED!\n");
+              failed=1;
+          }
+      }
+
+      /* this is ugly... TODO: have internal tags for collectives or allow to change the tag of an operation without changing it */
+      /* let's rely on the MPI non-overtaking rule for now */
+      //MPI_Barrier(MPI_COMM_WORLD);
+  }
+
+  ffschedule_delete(allreduce);
+
+  fffinalize();
+
+  if (!failed){
+      printf("PASSED!\n");
+  }
+
   return 0;
 }
 
