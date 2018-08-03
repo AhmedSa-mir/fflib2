@@ -333,6 +333,7 @@ int libfabric_init(int argc, char ** argv)
             fi_cq_msg_entry entry;
             // First look if we received something!
             ssize_t num_read = fi_cq_read(ep.rxcq_, &entry, 1);
+
             if (num_read == 1)
             {
                 std::cout << "Got message " << ep.domain_->provider_ << "\n";
