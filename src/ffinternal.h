@@ -2,6 +2,8 @@
 #define _FFINTERNAL_
 
 #include "ff.h"
+#include "ffdatatype.h"
+#include "fflocks.h"
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -17,13 +19,26 @@
 #define IS_OPT_SET(op, opt) (op->options & opt == opt)
 
 #ifdef FFDEBUG
-static int dbg_myrank;
+extern int dbg_myrank;
 #define FFLOG(MSG, ...) printf("[%i - %u][%s:%i] "MSG, dbg_myrank, getpid(), __FILE__, __LINE__,  ##__VA_ARGS__)
+
+#define DOTLEN 256
+#define FFGRAPH(A, B) \
+{ \
+char dot_a[DOTLEN]; \
+char dot_b[DOTLEN]; \
+ffop_tostring(A, dot_a, DOTLEN); \
+ffop_tostring(B, dot_b, DOTLEN); \
+FFLOG("DOT#\"%i.%s\" -> \"%i.%s\"\n", dbg_myrank, dot_a, dbg_myrank, dot_b); \
+}
 #else
 #define FFLOG(MSG, ...) 
+#define FFGRAPH(A, B) 
 #endif
 
-#define MIN(a, b, c) (((a<b ? a : b) < c) ? (a<b ? a : b) : c)
+#ifndef MIN
+ #define MIN(a, b, c) (((a<b ? a : b) < c) ? (a<b ? a : b) : c)
+#endif
 
 #define FFSEND    0
 #define FFRECV    1
@@ -48,10 +63,14 @@ typedef int (*ffimpl_operator_delete_t)(ffoperator_h);
 /* Operation descriptor */
 typedef int (*ffop_post_t)(ffop_t*, ffop_mem_set_t*);
 typedef int (*ffop_init_t)(ffop_t*);
+typedef int (*ffop_tostring_t)(ffop_t*, char * str, int len);
+typedef int (*ffop_finalize_t)(ffop_t*);
 
 typedef struct ffop_descriptor{
     ffop_init_t init;
     ffop_post_t post;
+    ffop_tostring_t tostring;
+    ffop_finalize_t finalize;
 } ffop_descriptor_t;
 
 

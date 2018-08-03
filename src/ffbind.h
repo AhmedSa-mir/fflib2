@@ -5,6 +5,8 @@
 #include "bindings/mpi_binding.h"
 #elif FFLIB_HAVE_LIBFABRIC
 # include "bindings/libfabric_binding.h"
+#elif FFLIB_HAVE_HPX
+# include "bindings/libfabric_binding.h"
 #endif
 
 int ffbind(ffdescr_t * ffdescr);

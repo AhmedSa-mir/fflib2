@@ -17,4 +17,9 @@ typedef struct ffcomp{
 
 } ffcomp_t;
 
+int ffcomp_tostring(ffop_t * op, char * str, int len);
+
+int ffcomp_finalize(ffop_t * op);
+
+
 #endif /* _FFCOMP_H_ */

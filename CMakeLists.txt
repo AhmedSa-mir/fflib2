@@ -23,7 +23,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 # Option to choose network library provider
 #--------------------------------------------------
 set(fflib_PROVIDER "mpi" CACHE STRING "Choose underlying library to provide communication functions")
-set_property(CACHE fflib_PROVIDER PROPERTY STRINGS mpi libfabric)
+set_property(CACHE fflib_PROVIDER PROPERTY STRINGS mpi libfabric hpxlibfabric)
 
 #--------------------------------------------------
 # Standard linux include dirs
@@ -59,11 +59,29 @@ if (fflib_PROVIDER STREQUAL "libfabric")
 endif()
 
 #--------------------------------------------------
+# find HPX if needed
+#--------------------------------------------------
+if (fflib_PROVIDER STREQUAL "hpxlibfabric")
+  find_package(HPX REQUIRED)
+  find_package(Libfabric REQUIRED)
+  include_directories(
+    ${LIBFABRIC_INCLUDE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+
+  set(FFLIB_HAVE_HPX       1)
+  add_definitions(-DFFLIB_HAVE_HPX)
+endif()
+
+#--------------------------------------------------
 # define source files for fflib/etc
 #--------------------------------------------------
 set(FFLIB_SRCS
   src/ff.c
+  src/ffdatatype.c
   src/ffop.c
+  src/ffop_mem.c
+
   src/ffcomp.c
   src/ffprogress.c
   src/ffrecv.c
@@ -73,6 +91,8 @@ set(FFLIB_SRCS
   src/ffschedule.c
   #
   src/utils/ffarman.c
+  src/colls/ffallreduce.c
+
 )
 
 if (FFLIB_HAVE_MPI)
@@ -97,7 +117,7 @@ set(FFLIB_COMPONENT_C_SRCS ${FFLIB_COMPONENT_C_SRCS}
   )
 #endif()
 
-if (FFLIB_HAVE_LIBFABRIC)
+if (FFLIB_HAVE_LIBFABRIC OR FFLIB_HAVE_HPX)
   set(FFLIB_COMPONENT_C_SRCS ${FFLIB_COMPONENT_C_SRCS}
     src/components/libfabric/fflibfabric.c
     src/components/libfabric/ffop_libfabric_init.c
@@ -107,7 +127,9 @@ if (FFLIB_HAVE_LIBFABRIC)
     #
     src/bindings/libfabric_binding.c
   )
+endif()
 
+if (FFLIB_HAVE_LIBFABRIC)
   #--------------------------------------------------
   # Thomas Heller's libfabric connection experiment
   #--------------------------------------------------
@@ -139,7 +161,7 @@ set_target_properties(fflib PROPERTIES
     PUBLIC_HEADER src/ff.h)
 include_directories(fflib src)
 
-target_link_libraries(fflib ${FFLIB_LIBRARY_DEPENDENCIES})
+target_link_libraries(fflib m ${FFLIB_LIBRARY_DEPENDENCIES})
 
 configure_file(fflib.pc.in fflib.pc @ONLY)
 install(TARGETS fflib
