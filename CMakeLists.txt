@@ -72,7 +72,7 @@ set(FFLIB_SRCS
   src/ffnop.c
   src/ffschedule.c
   src/ffdatatype.c
-  src/ffop_mem.c
+  src/ffbuffer.c
   #
   src/utils/ffarman.c
   src/colls/ffallreduce.c
@@ -142,12 +142,17 @@ set_target_properties(fflib PROPERTIES
     PUBLIC_HEADER src/ff.h)
 include_directories(fflib src)
 
+
 target_link_libraries(fflib ${FFLIB_LIBRARY_DEPENDENCIES})
+
+set(CMAKE_C_FLAGS_DEBUG "-DFFDEBUG -g")
+set(CMAKE_C_FLAGS "-O3 -ftree-vectorize")
 
 configure_file(fflib.pc.in fflib.pc @ONLY)
 install(TARGETS fflib
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES ${CMAKE_BINARY_DIR}/fflib.pc
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 

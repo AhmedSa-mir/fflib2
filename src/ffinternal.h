@@ -1,6 +1,9 @@
 #ifndef _FFINTERNAL_
 #define _FFINTERNAL_
 
+#define FFPROGRESS_THREAD
+//#define WAIT_COND
+
 #include "ff.h"
 #include "ffdatatype.h"
 #include "fflocks.h"
@@ -18,7 +21,7 @@
 
 #define FFLOG_ERROR(MSG, ...) { printf("[%u][%s:%i] "MSG, getpid(), __FILE__, __LINE__,  ##__VA_ARGS__); }
 
-#define IS_OPT_SET(op, opt) (op->options & opt == opt)
+#define IS_OPT_SET(op, opt) (((op->options) & opt) == opt)
 
 #ifdef FFDEBUG
 extern int dbg_myrank;
@@ -51,7 +54,7 @@ typedef int ffdatatype_t; /* for now the internal datatype type is an int as wel
 typedef uint32_t ffpeer_t;
 typedef struct ffop ffop_t;
 typedef struct ffop_descriptor ffop_descriptor_t;
-typedef struct ffop_mem_set ffop_mem_set_t;
+typedef struct ffbuffer_set ffbuffer_set_t;
 
 typedef int (*ffimpl_init_t)(int*, char***);
 typedef int (*ffimpl_finalize_t)();
@@ -62,9 +65,11 @@ typedef int (*ffimpl_operator_delete_t)(ffoperator_h);
 
 
 /* Operation descriptor */
-typedef int (*ffop_post_t)(ffop_t*, ffop_mem_set_t*);
+typedef int (*ffop_post_t)(ffop_t*, ffbuffer_set_t*);
 typedef int (*ffop_init_t)(ffop_t*);
-typedef int (*ffop_tostring_t)(ffop_t*, char * str, int len);
+typedef int (*ffop_test_t)(ffop_t*, int*);
+typedef int (*ffop_wait_t)(ffop_t*);
+typedef int (*ffop_tostring_t)(ffop_t*, char *, int);
 typedef int (*ffop_finalize_t)(ffop_t*);
 
 typedef struct ffop_descriptor{
@@ -72,6 +77,8 @@ typedef struct ffop_descriptor{
     ffop_post_t post;
     ffop_tostring_t tostring;
     ffop_finalize_t finalize;
+    ffop_wait_t wait;
+    ffop_test_t test;
 } ffop_descriptor_t;
 
 

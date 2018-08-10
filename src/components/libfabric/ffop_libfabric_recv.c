@@ -3,7 +3,7 @@
 #include "ffop_libfabric_progresser.h"
 #include "ffrecv.h"
 
-int ffop_libfabric_recv_post(ffop_t * op, ffop_mem_set_t * mem){
+int ffop_libfabric_recv_post(ffop_t * op, ffbuffer_set_t * mem){
     int ret;
 
     ffrecv_t * recv = &(op->recv);

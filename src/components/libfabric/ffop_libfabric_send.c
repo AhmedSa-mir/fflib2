@@ -3,7 +3,7 @@
 #include "ffop_libfabric_progresser.h"
 #include "ffsend.h"
 
-int ffop_libfabric_send_post(ffop_t * op, ffop_mem_set_t * mem){
+int ffop_libfabric_send_post(ffop_t * op, ffbuffer_set_t * mem){
     int ret;
 
     ffsend_t * send = &(op->send);

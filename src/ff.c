@@ -6,6 +6,7 @@
 #include "ffprogress.h"
 #include "ffinternal.h"
 #include "ffschedule.h"
+#include "ffbuffer.h"
 
 #ifdef FFDEBUG
 #include <sys/types.h>
@@ -40,15 +41,21 @@ int ffinit(int * argc, char *** argv){
     ff.impl.ops[FFCOMP].finalize = ffcomp_finalize;
 
     ffstorage_init();
+    ffbuffer_init();
     ffop_init();
     ffschedule_init();
 
     ff.impl.init(argc, argv);
 
     ff.terminate = 0;
+
+#ifdef FFPROGRESS_THREAD
     ret = pthread_create(&(ff.progress_thread), NULL, progress_thread, &ff);
     if (ret){ return FFERROR; }
     while (!progresser_ready());
+#else
+    FFLOG("Progress thread disabled!\n");
+#endif
 
 #ifdef FFDEBUG
     ffrank(&dbg_myrank);
@@ -62,13 +69,16 @@ int ffinit(int * argc, char *** argv){
 
 int fffinalize(){
 
+#ifdef FFPROGRESS_THREAD
     ff.terminate=1;
     if (pthread_join(ff.progress_thread, NULL)){
         return FFERROR;
     }
- 
+#endif
+
     ff.impl.finalize(); 
     ffop_finalize();
+    ffbuffer_finalize();
     ffstorage_finalize();
   
     return FFSUCCESS;

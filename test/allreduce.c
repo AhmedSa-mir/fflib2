@@ -24,8 +24,8 @@ int main(int argc, char * argv[]){
     ffrank(&rank);
     ffsize(&size);
 
-    int32_t * to_reduce = malloc(sizeof(int32_t)*count);;
-    int32_t * reduced = malloc(sizeof(int32_t)*count);;
+    int32_t * to_reduce = malloc(sizeof(int32_t)*count);
+    int32_t * reduced = malloc(sizeof(int32_t)*count);
     
     int failed=0;
     
@@ -34,18 +34,18 @@ int main(int argc, char * argv[]){
 
     MPI_Barrier(MPI_COMM_WORLD); //not needed, just for having nice output
     for (int i=0; i<N; i++){
-        
+            
         for (int j=0; j<count; j++){
             to_reduce[j] = i+j;
             reduced[j] = 0;
         }
-
+        
         ffschedule_post(allreduce);
         ffschedule_wait(allreduce);
 
         for (int j=0; j<count; j++){
             if (reduced[j] != (i+j)*size){
-                printf("FAILED!\n");
+                printf("[rank %i] FAILED! (i: %i; j: %i) (expected: %u; got: %u; toreduce: %u; csize: %u)\n", rank, i, j, (i+j)*size, reduced[j], to_reduce[j], size);
                 failed=1;
             }
         }
