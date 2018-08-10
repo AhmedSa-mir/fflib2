@@ -13,6 +13,8 @@ set(TEST_C_SRCS
   #  custom_computation
   ping_pong_schedule
   ping_pong_sched_libfabric
+  #allreduce
+  allreduce_libfabric
 )
 
 set(TEST_CPP_SRCS

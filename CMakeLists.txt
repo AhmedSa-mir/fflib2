@@ -71,8 +71,11 @@ set(FFLIB_SRCS
   src/ffstorage.c
   src/ffnop.c
   src/ffschedule.c
+  src/ffdatatype.c
+  src/ffop_mem.c
   #
   src/utils/ffarman.c
+  src/colls/ffallreduce.c
 )
 
 if (FFLIB_HAVE_MPI)

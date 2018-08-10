@@ -9,6 +9,8 @@
 
 static pool_h op_pool;
 
+static uint64_t opid = 0;
+
 int ffop_init(){
 
     op_pool = ffstorage_pool_create(sizeof(ffop_t), INITIAL_FFOP_POOL_COUNT);
@@ -26,6 +28,12 @@ int ffop_free(ffop_h _op){
     return ffstorage_pool_put(op);
 }
 
+int ffop_tostring(ffop_h _op, char * str, int len){
+    ffop_t * op = (ffop_t *) _op;
+    ff.impl.ops[op->type].tostring(op, str, len);
+    return FFSUCCESS;
+}
+
 int ffop_post(ffop_h _op){
     int res;
     ffop_t * op = (ffop_t *) _op;
@@ -35,7 +43,10 @@ int ffop_post(ffop_h _op){
 #endif
 
 #ifdef ARGS_CHECK
-    if (op->type<0 || op->type>FFMAX_IDX) return FFINVALID_ARG;
+    if (op->type<0 || op->type>FFMAX_IDX) {
+        FFLOG("Invalid arg: op->type: %u\n", op->type);
+        return FFINVALID_ARG;
+    }
 #endif
 
     if (op->version>0 && IS_OPT_SET(op, FFOP_NON_PERSISTENT)){
@@ -45,11 +56,12 @@ int ffop_post(ffop_h _op){
 
     op->instance.completed = 0;
 
+    FFLOG("Posting op %lu\n", op->id);
     //__sync_fetch_and_add(&(op->instance.posted_version), 1);
     res = ff.impl.ops[op->type].post(op, NULL);
 
     /* check if the operation has been immediately completed */
-    if (FFOP_IS_COMPLETED(op)){ ffop_complete(op); }
+    if (res==FFCOMPLETED){ ffop_complete(op); }
     
     return res;
 }
@@ -67,6 +79,7 @@ int ffop_wait(ffop_h _op){
         }
     }
 
+    op->instance.completed = 0;
     //FFLOG("Wait on %p finished: version: %u; posted version: %u; completed version: %u\n", op, op->version, op->instance.posted_version, op->instance.completed_version);
     return FFSUCCESS;
 }
@@ -74,7 +87,13 @@ int ffop_wait(ffop_h _op){
 int ffop_test(ffop_h _op, int * flag){
     ffop_t * op = (ffop_t *) _op;
 
-    return FFOP_IS_COMPLETED(op);
+    *flag = FFOP_IS_COMPLETED(op);
+
+    if (*flag){
+        op->instance.completed=0;
+    }
+    return FFSUCCESS;
+
 }
 
 
@@ -91,6 +110,10 @@ int ffop_hb(ffop_h _first, ffop_h _second){
     if (idx > MAX_DEPS) return FFTOO_MANY_DEPS;
 #endif
 
+    FFLOG("HB: %lu -> %lu\n", first->id, second->id);
+
+    FFGRAPH(_first, _second);
+
     first->dependent[idx] = second;
     __sync_fetch_and_add(&(second->in_dep_count), 1);
     second->instance.dep_left = second->in_dep_count;
@@ -105,6 +128,7 @@ int ffop_create(ffop_t ** ptr){
     
     ffop_t * op                     = *ptr;
 
+    op->id                          = opid++;
     op->out_dep_count               = 0;
     op->in_dep_count                = 0;
     op->sched_next                  = NULL;
@@ -122,14 +146,18 @@ int ffop_create(ffop_t ** ptr){
 
 int ffop_complete(ffop_t * op){
 
-    FFLOG("completing op %p\n", op);
+    FFLOG("completing op %lu\n", op->id);
+
+    // increment version && restore dep_left, so the op can be reused
     __sync_fetch_and_add(&(op->version), 1);
-    
+    op->instance.dep_left = op->in_dep_count; 
+    __sync_add_and_fetch(&(op->instance.completed), 1);
+
     for (int i=0; i<op->out_dep_count; i++){
         ffop_t * dep_op = op->dependent[i];
 
         uint32_t deps = __sync_add_and_fetch(&(dep_op->instance.dep_left), -1);
-        FFLOG("Decreasing %p dependencies by one: now %i\n", dep_op, dep_op->instance.dep_left);
+        FFLOG("Decreasing %lu dependencies by one: now %i\n", dep_op->id, dep_op->instance.dep_left);
 
         int trigger;
         // triggering conditions:
@@ -139,7 +167,7 @@ int ffop_complete(ffop_t * op){
         trigger &= (op->version==0 || !IS_OPT_SET(op, FFOP_NON_PERSISTENT));
 
         if (trigger){
-            FFLOG("All dependencies of %p are satisfied: posting it!\n", dep_op);
+            FFLOG("All dependencies of %lu are satisfied: posting it!\n", dep_op->id);
             ffop_post((ffop_h) dep_op);
         }
 
