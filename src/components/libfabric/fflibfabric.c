@@ -11,7 +11,7 @@ int fflibfabric_init(int * argc, char *** argv){
     // Initialize libfabric connection
     int ret = libfabric_init(*argc, *(argv));
 
-    if(!ret)
+    if(ret)
         return FFERROR;
 
     //initialize the generic computation (gcomp) component
@@ -21,8 +21,6 @@ int fflibfabric_init(int * argc, char *** argv){
 }
 
 int fflibfabric_finalize(){
-
-    // fi_close() ?
     mr_release();
 
     ffgcomp_finalize();
@@ -36,6 +34,6 @@ int fflibfabric_get_rank(int * rank){
 }
 
 int fflibfabric_get_size(int * size){
-    *size = 2;	// To be changed
+    *size = get_num_localities();
     return FFSUCCESS;
 }
