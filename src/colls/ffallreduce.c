@@ -24,16 +24,17 @@ int ffallreduce_post_check(ffschedule_h sched){
 
     int sb_count, rb_count;
     ffdatatype_h sb_type, rb_type;
+    int in_place = state->sndbuff == FFBUFF_NONE;
 
-    ffbuffer_get_size(state->sndbuff, &sb_count, &sb_type);
+    if (!in_place) ffbuffer_get_size(state->sndbuff, &sb_count, &sb_type);
     ffbuffer_get_size(state->rcvbuff, &rb_count, &rb_type);
 
-    if (sb_type!=rb_type || rb_type!=state->datatype) {
+    if ((!in_place && sb_type!=rb_type) || rb_type!=state->datatype) {
         FFLOG("Datatype mismatch!\n");
         return FFINVALID_ARG;
     }
 
-    if (sb_count != rb_count){
+    if (!in_place && sb_count != rb_count){
         FFLOG("Size mismatch!\n");
         return FFINVALID_ARG;
     }
@@ -41,7 +42,7 @@ int ffallreduce_post_check(ffschedule_h sched){
     if (rb_count > state->count){
         FFLOG("Resizing temp buffers!\n");
         for (int i=0; i<state->tmpbuffs_count; i++){
-            ffbuffer_resize(state->tmpbuffs[i], rb_count, rb_type);
+            ffbuffer_resize(state->tmpbuffs[i], NULL, rb_count, rb_type);
         }
         state->count = rb_count;
     }
@@ -54,13 +55,14 @@ int ffallreduce_free(ffschedule_h sched){
     allreduce_state_t * state;
     ffschedule_get_state(sched, (void **) &state);
     assert(state!=NULL);    
+    int in_place = state->sndbuff == FFBUFF_NONE;
 
     for (int i=0; i<state->tmpbuffs_count; i++){
         ffbuffer_delete(state->tmpbuffs[i]);
     }
 
     if (state->free_sr_buff){
-        ffbuffer_delete(state->sndbuff);
+        if (!in_place) ffbuffer_delete(state->sndbuff);
         ffbuffer_delete(state->rcvbuff);
     }
     
@@ -79,12 +81,11 @@ int ffallreduce(void * sndbuff, void * rcvbuff, int count, int tag, ffoperator_h
 
     int mask = 0x1;
     int maxr = (int)ceil((log2(csize)));
+    int in_place = sndbuff == FFINPLACE;
+    int buffers_provided = ((options & FFCOLL_BUFFERS) == FFCOLL_BUFFERS);
 
     size_t unitsize;
     ffdatatype_size(datatype, &unitsize);
-
-    FFLOG("allocating mem %lu (maxr = %u)\n", (maxr)*count*unitsize, maxr);
-    //void * tmpmem = malloc(maxr*count*unitsize);
 
     allreduce_state_t * state = (allreduce_state_t *) malloc(sizeof(allreduce_state_t));
    
@@ -96,33 +97,36 @@ int ffallreduce(void * sndbuff, void * rcvbuff, int count, int tag, ffoperator_h
     state->datatype = datatype;
     state->count = count;
 
-    if ((options & FFCOLL_BUFFERS) == FFCOLL_BUFFERS){
-        FFLOG("Buffers are provided by the users\n");
-        state->sndbuff = *((ffbuffer_h *) sndbuff);
+    if (buffers_provided){
+        FFLOG("Buffers are provided by the user\n");
+        if (!in_place) state->sndbuff = *((ffbuffer_h *) sndbuff);
+        else state->sndbuff = FFBUFF_NONE;
         state->rcvbuff = *((ffbuffer_h *) rcvbuff);
         state->free_sr_buff = 0;
+        ffschedule_set_post_callback(sched, ffallreduce_post_check);
     }else{
         FFLOG("Allocating buffers\n");
-        ffbuffer_create(sndbuff, count, datatype, 0, &(state->sndbuff));
+        if (!in_place) ffbuffer_create(sndbuff, count, datatype, 0, &(state->sndbuff));
+        else state->sndbuff = FFBUFF_NONE;
         ffbuffer_create(rcvbuff, count, datatype, 0, &(state->rcvbuff));
         state->free_sr_buff = 1;
     }
 
+    ffop_h move;
+
     ffbuffer_h sb = state->sndbuff;
     ffbuffer_h rb = state->rcvbuff;
-    
+    if (!in_place){
+        ffcomp_b(sb, FFBUFF_NONE, FFIDENTITY, FFCOMP_DEST_ATOMIC, rb, &move);
+    }else{
+        ffnop(0, &move);      
+    }
+
     ffschedule_set_state(sched, (void *) state);
-
-    ffschedule_set_post_callback(sched, ffallreduce_post_check);
     ffschedule_set_delete_callback(sched, ffallreduce_free);
-
-    ffop_h move;
-    //ffcomp(sndbuff, NULL, count, datatype, FFIDENTITY, FFCOMP_DEST_ATOMIC, rcvbuff, &move);
-    ffcomp_b(sb, FFBUFF_NONE, FFIDENTITY, FFCOMP_DEST_ATOMIC, rb, &move);
 
     ffop_h send=FFNONE, recv=FFNONE, prev_send=FFNONE, comp=FFNONE;
     uint32_t r=0;
-
     comp = move;
     while (mask < csize) {
         uint32_t dst = rank^mask;

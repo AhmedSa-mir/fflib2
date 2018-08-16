@@ -23,6 +23,8 @@ int ffbind(ffdescr_t * ffdescr){
 
     ffdescr->impl.ops[FFCOMP].init = ffop_gcomp_init;
     ffdescr->impl.ops[FFCOMP].post = ffop_gcomp_post;
+    ffdescr->impl.ops[FFCOMP].wait = ffop_gcomp_wait;
+    ffdescr->impl.ops[FFCOMP].test = ffop_gcomp_test;
 
     ffdescr->impl.operator_create = ffop_gcomp_operator_custom_create;
     ffdescr->impl.operator_delete = ffop_gcomp_operator_custom_delete;

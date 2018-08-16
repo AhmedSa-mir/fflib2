@@ -80,8 +80,6 @@ set(FFLIB_SRCS
   src/ff.c
   src/ffdatatype.c
   src/ffop.c
-  src/ffop_mem.c
-
   src/ffcomp.c
   src/ffprogress.c
   src/ffrecv.c

@@ -672,3 +672,8 @@ int get_remote_locality_id()
 {
     return ct.remote_locality_id;
 }
+
+int get_num_localities()
+{
+    return 2; //TO BE CHANGED
+}
